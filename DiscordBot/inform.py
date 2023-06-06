@@ -248,5 +248,5 @@ class Colloquialism:
             return [reply]
 
             
-    def inform_complete(self):
+    def report_complete(self):
         return self.state == Inform_State.INFORM_COMPLETE

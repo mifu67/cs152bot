@@ -10,6 +10,9 @@ class State(Enum):
     IS_MISLEADING = auto()
     MISLEADING_RESPONSE_OBTAINED = auto()  
     LAST_USER_INPUT = auto() 
+    ADDITIONAL_MESSAGE_FEEDBACK_SPAM = auto()
+    ADDITIONAL_MESSAGE_FEEDBACK_HARMFUL = auto()
+    ADDITIONAL_MESSAGE_FEEDBACK_HARASSMENT = auto()
 
     MESSAGE_BLOCKED = auto()   
     LAST_USER_INPUT_MISLEADING = auto()
@@ -97,7 +100,7 @@ class Report:
             reply += "`4`: Misleading Information"
             
             return [reply]
-        
+
         if self.state == State.MESSAGE_IDENTIFIED:
             # error catching 
             reply = "I'm sorry, but I don't recognize that input. Please enter a number from 1 to 4."
@@ -108,14 +111,15 @@ class Report:
                 reply += "`1`: Phishing\n"
                 reply += "`2`: Overwhelming amount of unwanted messages\n"
                 reply += "`3`: Solicitation"
-                self.state = State.LAST_USER_INPUT
+                self.state = State.ADDITIONAL_MESSAGE_FEEDBACK_SPAM
+
             elif message.content == '2':
                 reply = "Please provide more details about the harassment by entering the corresponding number.\n"
                 reply += "`1`: Attacks based on my identity\n"
                 reply += "`2`: Advocating for violence against me\n"
                 reply += "`3`: Threatening to reveal my private information\n"
                 reply += "`4`: Coordinated attacks against me by multiple individuals"
-                self.state = State.LAST_USER_INPUT
+                self.state = State.ADDITIONAL_MESSAGE_FEEDBACK_HARASSMENT
             elif message.content == '3':
                 reply = "Please select the kind of disturbing content by entering the corresponding number.\n"
                 reply += "`1`: Child sexual exploitation\n"
@@ -123,7 +127,7 @@ class Report:
                 reply += "`3`: Gore\n"
                 reply += "`4`: Hate speech\n"
                 reply += "`5`: Content that advocates for or glorifies violence"
-                self.state = State.LAST_USER_INPUT
+                self.state = State.ADDITIONAL_MESSAGE_FEEDBACK_HARMFUL
             elif message.content == '4':
                 reply = "Is this information misleading (requires more context), misattributed (incorrect source or speaker), or untrue (deliberately false)?\n"
                 reply += "`1`: Misleading (requires more context)\n"
@@ -132,7 +136,31 @@ class Report:
                 self.state = State.IS_MISLEADING
                 self.ismisinfo = True
             return [reply]
-            
+        
+        if self.state == State.ADDITIONAL_MESSAGE_FEEDBACK_SPAM:
+            reply = "Thank you for reporting this message as spam. Our content moderation team will review the message and decide on an appropriate course of action. This may include post removal, account suspension, or placement of the account in read-only mode.\n\n"
+            reply += "In the meantime, we've hid the reported message from your view.\n"
+            reply += "Would you like to mute or block the offending user?\n"
+            reply += "`1`: Mute\n"
+            reply += "`2`: Block\n"
+            reply += "`3`: Neither"
+            self.state = State.MESSAGE_BLOCKED
+            return [reply]
+
+        if self.state == State.ADDITIONAL_MESSAGE_FEEDBACK_HARASSMENT:
+            reply = "Thank you for reporting this message as harassment. Our content moderation team will review the message and decide on an appropriate course of action. This may include post removal, account suspension, or placement of the account in read-only mode.\n\n"
+            reply += "In the meantime, we've hid the reported message from your view and blocked the offending user.\n"
+            reply += "If at any point you feel as though your safety is in danger, please dial 911 to contact your local law enforcement.\n"
+            self.state = State.MESSAGE_BLOCKED
+            return [reply]
+
+        if self.state == State.ADDITIONAL_MESSAGE_FEEDBACK_HARMFUL:
+            reply = "Thank you for reporting this message as including disturbing content. Our content moderation team will review the message and decide on an appropriate course of action. This may include post removal, account suspension, or placement of the account in read-only mode.\n\n"
+            reply += "In the meantime, we've hid the reported message from your view and blocked the offending user.\n"
+            reply += "If at any point you would like to receive mental health or counseling support, please dial our hotline at 123-456-7890 for support. If you are in immediate danger of being harmed or harming others, please dial 911.\n"
+            self.state = State.MESSAGE_BLOCKED
+            return [reply]
+        
         if self.state == State.IS_MISLEADING:
             reply = "I'm sorry, but I don't recognize that input. Please enter a number from 1 to 3."
             self.report_code += message.content
